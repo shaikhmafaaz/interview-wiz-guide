@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase client
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!, 
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -18,8 +25,16 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Here we'll integrate Supabase auth
-      // For now, just simulate a successful login
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
       toast.success("Successfully logged in!");
       navigate("/");
     } catch (error) {
