@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Loader2, Copy, RefreshCw } from "lucide-react";
 import questionBank, { Question } from "@/data/questionBanks";
 import { toast } from "@/components/ui/sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AnswerSection } from "./AnswerSection";
 
 export function QuestionGenerator() {
   const [role, setRole] = useState<string>("");
@@ -27,6 +27,9 @@ export function QuestionGenerator() {
     setQuestions([]);
   };
 
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isAnswerMode, setIsAnswerMode] = useState(false);
+
   const generateQuestions = () => {
     if (!role) {
       toast.error("Please select a role first");
@@ -35,10 +38,11 @@ export function QuestionGenerator() {
 
     setIsGenerating(true);
     
-    // Simulate API call with setTimeout
     setTimeout(() => {
       const questionsForRole = questionBank[role]?.[experienceLevel] || [];
       setQuestions(questionsForRole);
+      setCurrentQuestionIndex(0);
+      setIsAnswerMode(false);
       setIsGenerating(false);
       
       if (questionsForRole.length === 0) {
@@ -49,9 +53,13 @@ export function QuestionGenerator() {
     }, 800);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      toast.success("You've completed all questions!");
+      setIsAnswerMode(false);
+    }
   };
 
   return (
@@ -132,33 +140,48 @@ export function QuestionGenerator() {
           {questions.length > 0 && (
             <div className="mt-8 space-y-6 animate-fade-in">
               <h3 className="text-xl font-medium text-gray-800">
-                {questions.length} Questions for {role.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} ({experienceLevel})
+                Question {currentQuestionIndex + 1} of {questions.length}
               </h3>
-              <div className="space-y-4">
-                {questions.map((q) => (
-                  <Card key={q.id} className="p-4 hover:shadow-md transition-shadow border-l-4" style={{ borderLeftColor: '#9b87f5' }}>
-                    <div className="flex justify-between">
-                      <p className="font-medium text-gray-800">{q.question}</p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyToClipboard(q.question)}
-                        title="Copy to clipboard"
-                      >
-                        <Copy className="h-4 w-4 text-gray-500 hover:text-purple-500" />
-                      </Button>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="text-xs bg-blue-100 text-gray-700 px-2 py-1 rounded-full">
-                        {q.category}
-                      </span>
-                      <span className="text-xs bg-purple-100 text-gray-700 px-2 py-1 rounded-full">
-                        {q.difficulty}
-                      </span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+              <Card className="p-4 hover:shadow-md transition-shadow border-l-4" style={{ borderLeftColor: '#9b87f5' }}>
+                <div className="flex justify-between">
+                  <p className="font-medium text-gray-800">{questions[currentQuestionIndex].question}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(questions[currentQuestionIndex].question);
+                      toast.success("Copied to clipboard!");
+                    }}
+                    title="Copy to clipboard"
+                  >
+                    <Copy className="h-4 w-4 text-gray-500 hover:text-purple-500" />
+                  </Button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="text-xs bg-blue-100 text-gray-700 px-2 py-1 rounded-full">
+                    {questions[currentQuestionIndex].category}
+                  </span>
+                  <span className="text-xs bg-purple-100 text-gray-700 px-2 py-1 rounded-full">
+                    {questions[currentQuestionIndex].difficulty}
+                  </span>
+                </div>
+              </Card>
+
+              {!isAnswerMode && (
+                <Button
+                  className="w-full bg-purple-500 hover:bg-purple-600"
+                  onClick={() => setIsAnswerMode(true)}
+                >
+                  Answer This Question
+                </Button>
+              )}
+
+              {isAnswerMode && (
+                <AnswerSection
+                  question={questions[currentQuestionIndex].question}
+                  onNextQuestion={handleNextQuestion}
+                />
+              )}
             </div>
           )}
         </div>
