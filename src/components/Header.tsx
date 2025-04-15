@@ -1,5 +1,5 @@
 
-import { Briefcase, HelpCircle, Info } from "lucide-react";
+import { Briefcase, HelpCircle, Info, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function Header() {
@@ -19,6 +19,10 @@ export function Header() {
             <HelpCircle className="h-4 w-4" />
             <span>Help</span>
           </button>
+          <Link to="/login" className="flex items-center space-x-1 bg-white/20 px-3 py-1 rounded hover:bg-white/30 transition-colors">
+            <LogIn className="h-4 w-4" />
+            <span>Login</span>
+          </Link>
         </div>
       </div>
     </header>
