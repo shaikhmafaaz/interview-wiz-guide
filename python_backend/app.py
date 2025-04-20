@@ -36,9 +36,24 @@ def init_db():
         )
         ''')
         conn.commit()
+    print(f"Database initialized at {DB_PATH}")
 
 # Initialize the database
 init_db()
+
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        'status': 'running',
+        'message': 'Interview Prep API is running. Use /health to check status or access specific API endpoints.',
+        'available_endpoints': [
+            '/health',
+            '/api/register',
+            '/api/login',
+            '/api/save-answer',
+            '/api/get-user-answers/<user_id>'
+        ]
+    })
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -103,9 +118,9 @@ def save_answer():
             cursor.execute('INSERT INTO user_answers (user_id, question, answer) VALUES (?, ?, ?)',
                           (user_id, data['question'], data['answer']))
             conn.commit()
-        return jsonify({'status': 'success', 'message': 'Answer saved successfully'})
+        return jsonify({'success': True, 'message': 'Answer saved successfully'})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/get-user-answers/<int:user_id>', methods=['GET'])
 def get_user_answers(user_id):
@@ -119,5 +134,27 @@ def get_user_answers(user_id):
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({
+        'status': 'error',
+        'message': 'Endpoint not found. Please check the URL and try again.',
+        'available_endpoints': [
+            '/health',
+            '/api/register',
+            '/api/login',
+            '/api/save-answer',
+            '/api/get-user-answers/<user_id>'
+        ]
+    }), 404
+
 if __name__ == '__main__':
+    print(f"Starting Flask server on http://localhost:5000")
+    print(f"Available endpoints:")
+    print(f"  - /")
+    print(f"  - /health")
+    print(f"  - /api/register")
+    print(f"  - /api/login")
+    print(f"  - /api/save-answer")
+    print(f"  - /api/get-user-answers/<user_id>")
     app.run(debug=True, host='0.0.0.0', port=5000)
