@@ -5,11 +5,23 @@ interface ApiResponse {
   data?: any;
 }
 
-// Replace this with your Python backend URL when deployed
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface RegisterCredentials extends LoginCredentials {}
+
+interface UserData {
+  id: number;
+  email: string;
+}
+
+// API URL for local development
 const API_URL = 'http://localhost:5000';
 
 export const apiService = {
-  // Example function to test connection
+  // Check if backend is healthy
   async checkHealth(): Promise<ApiResponse> {
     try {
       const response = await fetch(`${API_URL}/health`);
@@ -20,20 +32,115 @@ export const apiService = {
     }
   },
 
-  // Example function to make authenticated requests
-  async makeAuthenticatedRequest(endpoint: string, method: string = 'GET', body?: any): Promise<ApiResponse> {
+  // Register a new user
+  async register(credentials: RegisterCredentials): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        method,
+      const response = await fetch(`${API_URL}/api/register`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: JSON.stringify(credentials),
       });
       const data = await response.json();
-      return { success: true, message: 'Request successful', data };
+      
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Registration failed' };
+      }
+      
+      return { success: true, message: 'Registration successful', data };
     } catch (error) {
-      return { success: false, message: 'Request failed' };
+      return { success: false, message: 'Registration failed' };
+    }
+  },
+
+  // Login user
+  async login(credentials: LoginCredentials): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Login failed' };
+      }
+      
+      // Store user data in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      return { 
+        success: true, 
+        message: 'Login successful', 
+        data: data.user 
+      };
+    } catch (error) {
+      return { success: false, message: 'Login failed' };
+    }
+  },
+
+  // Log out user
+  logout(): void {
+    localStorage.removeItem('user');
+  },
+
+  // Get current user from localStorage
+  getCurrentUser(): UserData | null {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  },
+
+  // Save user answer
+  async saveAnswer(question: string, answer: string): Promise<ApiResponse> {
+    try {
+      const user = this.getCurrentUser();
+      const userId = user?.id;
+      
+      const response = await fetch(`${API_URL}/api/save-answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          question,
+          answer,
+        }),
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Failed to save answer' };
+      }
+      
+      return { success: true, message: 'Answer saved successfully' };
+    } catch (error) {
+      return { success: false, message: 'Failed to save answer' };
+    }
+  },
+
+  // Get user answers
+  async getUserAnswers(): Promise<ApiResponse> {
+    try {
+      const user = this.getCurrentUser();
+      if (!user) {
+        return { success: false, message: 'User not logged in' };
+      }
+      
+      const response = await fetch(`${API_URL}/api/get-user-answers/${user.id}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Failed to get answers' };
+      }
+      
+      return { success: true, message: 'Answers retrieved successfully', data: data.answers };
+    } catch (error) {
+      return { success: false, message: 'Failed to get answers' };
     }
   }
 };
