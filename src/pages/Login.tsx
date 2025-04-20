@@ -8,11 +8,12 @@ import { Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@supabase/supabase-js";
 
+// Initialize Supabase client with fallback values for development
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-supabase-url.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-supabase-anon-key';
+
 // Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!, 
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const Login = () => {
   const [email, setEmail] = useState("");
