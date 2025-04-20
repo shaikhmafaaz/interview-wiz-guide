@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Star, ThumbsUp } from "lucide-react";
+import { apiService } from "@/services/api";
 
 interface AnswerSectionProps {
   question: string;
@@ -15,34 +16,47 @@ export function AnswerSection({ question, onNextQuestion }: AnswerSectionProps) 
   const [answer, setAnswer] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [rating, setRating] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!answer.trim()) {
       toast.error("Please provide an answer before submitting");
       return;
     }
 
-    // Simple rating logic based on answer length and keywords
-    let score = 0;
-    const answerLength = answer.trim().length;
+    setIsSaving(true);
     
-    // Length-based scoring
-    if (answerLength > 200) score += 3;
-    else if (answerLength > 100) score += 2;
-    else if (answerLength > 50) score += 1;
+    try {
+      // Save the answer to the backend
+      const response = await apiService.saveAnswer(question, answer);
+      
+      if (!response.success) {
+        toast.error("Failed to save your answer. Please try again.");
+        return;
+      }
 
-    // Keywords-based scoring (example keywords - should be expanded based on question)
-    const keywords = ['example', 'experience', 'because', 'therefore', 'however'];
-    keywords.forEach(keyword => {
-      if (answer.toLowerCase().includes(keyword)) score += 1;
-    });
+      // Calculate rating and show feedback
+      let score = 0;
+      const answerLength = answer.trim().length;
+      
+      if (answerLength > 200) score += 3;
+      else if (answerLength > 100) score += 2;
+      else if (answerLength > 50) score += 1;
 
-    // Cap the score at 5
-    const finalScore = Math.min(5, score);
-    setRating(finalScore);
-    setIsSubmitted(true);
+      const keywords = ['example', 'experience', 'because', 'therefore', 'however'];
+      keywords.forEach(keyword => {
+        if (answer.toLowerCase().includes(keyword)) score += 1;
+      });
 
-    toast.success("Answer submitted successfully!");
+      const finalScore = Math.min(5, score);
+      setRating(finalScore);
+      setIsSubmitted(true);
+      toast.success("Answer saved successfully!");
+    } catch (error) {
+      toast.error("Failed to save your answer. Please ensure the backend server is running.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleNext = () => {
@@ -68,9 +82,9 @@ export function AnswerSection({ question, onNextQuestion }: AnswerSectionProps) 
           <Button 
             onClick={handleSubmit}
             className="w-full bg-purple-500 hover:bg-purple-600"
-            disabled={!answer.trim()}
+            disabled={!answer.trim() || isSaving}
           >
-            Submit Answer
+            {isSaving ? "Saving..." : "Submit Answer"}
           </Button>
         ) : (
           <div className="space-y-4">
