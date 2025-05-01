@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, User, XCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Message {
   id: number;
@@ -15,6 +15,8 @@ interface Message {
 export function ChatbotAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -23,7 +25,7 @@ export function ChatbotAssistant() {
     }
   ]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
     
     // Add user message
@@ -33,20 +35,54 @@ export function ChatbotAssistant() {
       sender: 'user'
     };
     
-    setMessages([...messages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
+    setIsLoading(true);
     
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = getBotResponse(inputMessage);
+    try {
+      // Send message to API
+      const response = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userMessage.text }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get response');
+      }
+      
+      // Add bot response
       const botMessage: Message = {
         id: messages.length + 2,
-        text: botResponse,
+        text: data.message,
         sender: 'bot'
       };
       
       setMessages(prev => [...prev, botMessage]);
-    }, 800);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get response from the assistant. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Fallback to static responses if API fails
+      const fallbackResponse = getBotResponse(inputMessage);
+      const botMessage: Message = {
+        id: messages.length + 2,
+        text: fallbackResponse,
+        sender: 'bot'
+      };
+      
+      setMessages(prev => [...prev, botMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getBotResponse = (message: string): string => {
@@ -135,6 +171,17 @@ export function ChatbotAssistant() {
                   </div>
                 </div>
               ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] px-4 py-2 rounded-lg bg-gray-100 text-gray-800 rounded-bl-none">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Bot className="h-4 w-4" />
+                      <span className="text-xs font-semibold">Assistant</span>
+                    </div>
+                    <p className="text-sm">Thinking...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
           
@@ -146,8 +193,14 @@ export function ChatbotAssistant() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="flex-1"
+                disabled={isLoading}
               />
-              <Button size="icon" onClick={handleSendMessage} disabled={!inputMessage.trim()}>
+              <Button 
+                size="icon" 
+                onClick={handleSendMessage} 
+                disabled={!inputMessage.trim() || isLoading}
+                className={isLoading ? "opacity-50" : ""}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </div>

@@ -1,7 +1,7 @@
-
 from flask import Flask, request, jsonify, Response
 from database import save_user_answer, get_user_answers
 from utils import generate_interview_questions
+from openai_utils import get_chatbot_response
 
 def register_routes(app):
     @app.route('/', methods=['GET'])
@@ -15,7 +15,8 @@ def register_routes(app):
                 '/api/login',
                 '/api/save-answer',
                 '/api/get-user-answers/<user_id>',
-                '/api/generate-questions'
+                '/api/generate-questions',
+                '/api/chat'  # New endpoint
             ]
         })
     
@@ -81,6 +82,24 @@ def register_routes(app):
         else:
             return jsonify({'success': False, 'message': result}), 500
     
+    @app.route('/api/chat', methods=['POST'])
+    def chat():
+        """
+        Endpoint for the chatbot functionality using the OpenAI API
+        """
+        data = request.json
+        
+        if not data or 'message' not in data:
+            return jsonify({'success': False, 'message': 'Message is required'}), 400
+            
+        user_message = data['message']
+        response = get_chatbot_response(user_message)
+        
+        return jsonify({
+            'success': True, 
+            'message': response
+        })
+    
     @app.errorhandler(404)
     def not_found(e):
         return jsonify({
@@ -92,6 +111,7 @@ def register_routes(app):
                 '/api/login',
                 '/api/save-answer',
                 '/api/get-user-answers/<user_id>',
-                '/api/generate-questions'
+                '/api/generate-questions',
+                '/api/chat'
             ]
         }), 404
