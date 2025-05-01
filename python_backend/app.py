@@ -1,5 +1,4 @@
-
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import sqlite3
 import os
@@ -61,22 +60,22 @@ def index():
 def health_check():
     return jsonify({'status': 'healthy', 'message': 'Python backend is running'})
 
-# New endpoint for generating interview questions
+# Modified endpoint for generating interview questions with plain text response
 @app.route('/api/generate-questions', methods=['POST'])
 def generate_questions():
     data = request.json
     
     # Validate input data
     if not data:
-        return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+        return Response('Error: No data provided', mimetype='text/plain'), 400
     
     topic = data.get('topic')
     difficulty = data.get('difficulty')
     
     if not topic:
-        return jsonify({'status': 'error', 'message': 'Topic is required'}), 400
+        return Response('Error: Topic is required', mimetype='text/plain'), 400
     if not difficulty:
-        return jsonify({'status': 'error', 'message': 'Difficulty is required'}), 400
+        return Response('Error: Difficulty is required', mimetype='text/plain'), 400
         
     # Define question templates for different topics
     question_templates = {
@@ -197,7 +196,6 @@ def generate_questions():
     templates = question_templates[topic]
     concepts = topic_concepts[topic]
     
-    # Generate unique questions
     used_templates = set()
     while len(questions) < num_questions and len(used_templates) < len(templates):
         template_idx = random.randint(0, len(templates) - 1)
@@ -214,24 +212,14 @@ def generate_questions():
         concept2 = random.choice([c for c in concepts if c != concept1])
         
         question = template.format(concept1, concept2)
-        
-        # Add question data
-        question_data = {
-            "id": len(questions) + 1,
-            "question": question,
-            "difficulty": difficulty,
-            "category": topic,
-            "concepts": [concept1, concept2]
-        }
-        
-        questions.append(question_data)
+        questions.append(question)
     
-    return jsonify({
-        'status': 'success',
-        'topic': topic,
-        'difficulty': difficulty,
-        'questions': questions
-    })
+    # Create plain text response
+    response_text = f"Topic: {topic}\nDifficulty: {difficulty}\n\nQuestions:\n"
+    for i, question in enumerate(questions, 1):
+        response_text += f"{i}. {question}\n"
+    
+    return Response(response_text, mimetype='text/plain')
 
 @app.route('/api/register', methods=['POST'])
 def register():
