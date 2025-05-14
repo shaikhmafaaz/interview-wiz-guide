@@ -1,9 +1,9 @@
 
-import openai
+from openai import OpenAI
 from config import OPENAI_API_KEY
 
 # Initialize the OpenAI client
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def get_chatbot_response(user_message):
     """
@@ -19,7 +19,7 @@ def get_chatbot_response(user_message):
         if not OPENAI_API_KEY:
             return "API key not configured. Please set the OPENAI_API_KEY environment variable."
             
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful interview preparation assistant. Provide concise, helpful advice on job interviews, technical questions, and career guidance."},
