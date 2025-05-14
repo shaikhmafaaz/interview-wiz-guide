@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,8 +52,18 @@ export function ChatbotAssistant() {
       
       const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to get response');
+      // Handle API key not configured response
+      if (data.message && data.message.includes("API key not configured")) {
+        console.log("OpenAI API Key needs to be configured:");
+        console.log("1. Create a .env file in the python_backend directory");
+        console.log("2. Add this line: OPENAI_API_KEY=your_openai_api_key_here");
+        console.log("3. Restart the Flask server");
+        
+        toast({
+          title: "API Key Missing",
+          description: "OpenAI API key is not configured. Check the console for instructions on how to set it up.",
+          variant: "destructive"
+        });
       }
       
       // Add bot response

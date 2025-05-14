@@ -16,8 +16,8 @@ def get_chatbot_response(user_message):
         str: The response from the API
     """
     try:
-        if not OPENAI_API_KEY:
-            return "API key not configured. Please set the OPENAI_API_KEY environment variable."
+        if not OPENAI_API_KEY or OPENAI_API_KEY.strip() == '':
+            return "API key not configured. Please set the OPENAI_API_KEY environment variable or in the .env file. Check the console for instructions."
             
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
