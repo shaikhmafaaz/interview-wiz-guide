@@ -1,11 +1,13 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, XCircle } from "lucide-react";
+import { Bot, Send, User, XCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ChatMessage } from "@/components/chat/ChatMessage";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ConnectionError } from "@/components/chat/ConnectionError";
 
 interface Message {
   id: number;
@@ -17,6 +19,7 @@ export function ChatbotAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [backendError, setBackendError] = useState(false);
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -25,6 +28,32 @@ export function ChatbotAssistant() {
       sender: 'bot'
     }
   ]);
+
+  // Check backend connection on first open
+  useEffect(() => {
+    if (isOpen) {
+      checkBackendConnection();
+    }
+  }, [isOpen]);
+
+  const checkBackendConnection = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/health', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        setBackendError(false);
+      } else {
+        setBackendError(true);
+      }
+    } catch (error) {
+      setBackendError(true);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -51,6 +80,7 @@ export function ChatbotAssistant() {
       });
       
       const data = await response.json();
+      setBackendError(false);
       
       // Handle API key not configured response
       if (data.message && data.message.includes("API key not configured")) {
@@ -76,11 +106,7 @@ export function ChatbotAssistant() {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to the backend server. Make sure the Flask server is running on http://localhost:5000.",
-        variant: "destructive"
-      });
+      setBackendError(true);
       
       // Fallback to static responses if API fails
       const fallbackResponse = getBotResponse(inputMessage);
@@ -157,30 +183,7 @@ export function ChatbotAssistant() {
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                      message.sender === 'user'
-                        ? 'bg-purple-500 text-white rounded-br-none'
-                        : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2 mb-1">
-                      {message.sender === 'bot' ? (
-                        <Bot className="h-4 w-4" />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
-                      <span className="text-xs font-semibold">
-                        {message.sender === 'user' ? 'You' : 'Assistant'}
-                      </span>
-                    </div>
-                    <p className="text-sm">{message.text}</p>
-                  </div>
-                </div>
+                <ChatMessage key={message.id} message={message} />
               ))}
               {isLoading && (
                 <div className="flex justify-start">
@@ -196,25 +199,16 @@ export function ChatbotAssistant() {
             </div>
           </ScrollArea>
           
+          {backendError && <ConnectionError />}
+          
           <div className="p-3 border-t">
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Type a message..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1"
-                disabled={isLoading}
-              />
-              <Button 
-                size="icon" 
-                onClick={handleSendMessage} 
-                disabled={!inputMessage.trim() || isLoading}
-                className={isLoading ? "opacity-50" : ""}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+            <ChatInput 
+              inputMessage={inputMessage}
+              setInputMessage={setInputMessage}
+              handleSendMessage={handleSendMessage}
+              handleKeyPress={handleKeyPress}
+              isLoading={isLoading}
+            />
           </div>
         </Card>
       ) : (
