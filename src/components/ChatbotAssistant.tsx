@@ -54,14 +54,14 @@ export function ChatbotAssistant() {
       
       // Handle API key not configured response
       if (data.message && data.message.includes("API key not configured")) {
-        console.log("OpenAI API Key needs to be configured:");
+        console.log("Gemini API Key needs to be configured:");
         console.log("1. Create a .env file in the python_backend directory");
-        console.log("2. Add this line: OPENAI_API_KEY=your_openai_api_key_here");
+        console.log("2. Add this line: GEMINI_API_KEY=your_gemini_api_key_here");
         console.log("3. Restart the Flask server");
         
         toast({
           title: "API Key Missing",
-          description: "OpenAI API key is not configured. Check the console for instructions on how to set it up.",
+          description: "Gemini API key is not configured. Check the console for instructions on how to set it up.",
           variant: "destructive"
         });
       }
@@ -77,8 +77,8 @@ export function ChatbotAssistant() {
     } catch (error) {
       console.error('Error:', error);
       toast({
-        title: "Error",
-        description: "Failed to get response from the assistant. Please try again.",
+        title: "Connection Error",
+        description: "Failed to connect to the backend server. Make sure the Flask server is running on http://localhost:5000.",
         variant: "destructive"
       });
       

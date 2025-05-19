@@ -32,6 +32,7 @@ This is the Python backend for the Interview Preparation Assistant application.
    - Option 2: Set as environment variable:
      - Windows: `set GEMINI_API_KEY=your_gemini_api_key_here`
      - macOS/Linux: `export GEMINI_API_KEY=your_gemini_api_key_here`
+   - Note: The application is currently configured with a default API key for testing purposes.
 
 6. Run the application:
    ```
@@ -39,3 +40,4 @@ This is the Python backend for the Interview Preparation Assistant application.
    ```
 
 The server will start at http://0.0.0.0:5000
+
