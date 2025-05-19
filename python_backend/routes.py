@@ -1,7 +1,8 @@
+
 from flask import Flask, request, jsonify, Response
 from database import save_user_answer, get_user_answers
 from utils import generate_interview_questions
-from openai_utils import get_chatbot_response
+from gemini_utils import get_chatbot_response
 
 def register_routes(app):
     @app.route('/', methods=['GET'])
@@ -16,16 +17,15 @@ def register_routes(app):
                 '/api/save-answer',
                 '/api/get-user-answers/<user_id>',
                 '/api/generate-questions',
-                '/api/chat'  # New endpoint
+                '/api/chat'
             ]
         })
     
-    @app.route('/health', methods=['GET'])
-    def health_check():
-        return jsonify({'status': 'healthy', 'message': 'Python backend is running'})
+    # ... keep existing code (health check endpoint)
     
     @app.route('/api/generate-questions', methods=['POST'])
     def generate_questions():
+        # ... keep existing code (generate questions logic)
         data = request.json
         
         # Validate input data
@@ -62,6 +62,7 @@ def register_routes(app):
     
     @app.route('/api/save-answer', methods=['POST'])
     def save_answer():
+        # ... keep existing code (save answer logic)
         data = request.json
         if not data or 'question' not in data or 'answer' not in data:
             return jsonify({'status': 'error', 'message': 'Question and answer required'}), 400
@@ -76,6 +77,7 @@ def register_routes(app):
     
     @app.route('/api/get-user-answers/<int:user_id>', methods=['GET'])
     def get_user_answers_route(user_id):
+        # ... keep existing code (get user answers logic)
         success, result = get_user_answers(user_id)
         if success:
             return jsonify({'success': True, 'answers': result})
@@ -85,7 +87,7 @@ def register_routes(app):
     @app.route('/api/chat', methods=['POST'])
     def chat():
         """
-        Endpoint for the chatbot functionality using the OpenAI API
+        Endpoint for the chatbot functionality using the Gemini API
         """
         data = request.json
         
@@ -102,6 +104,7 @@ def register_routes(app):
     
     @app.errorhandler(404)
     def not_found(e):
+        # ... keep existing code (404 handler)
         return jsonify({
             'status': 'error',
             'message': 'Endpoint not found. Please check the URL and try again.',

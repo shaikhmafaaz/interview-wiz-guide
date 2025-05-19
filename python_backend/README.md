@@ -19,16 +19,21 @@ This is the Python backend for the Interview Preparation Assistant application.
    pip install -r requirements.txt
    ```
 
-4. Configure your OpenAI API key:
+4. Install Google Generative AI library:
+   ```
+   pip install google-generativeai
+   ```
+
+5. Configure your Gemini API key:
    - Option 1: Create a `.env` file in this directory and add:
      ```
-     OPENAI_API_KEY=your_openai_api_key_here
+     GEMINI_API_KEY=your_gemini_api_key_here
      ```
    - Option 2: Set as environment variable:
-     - Windows: `set OPENAI_API_KEY=your_openai_api_key_here`
-     - macOS/Linux: `export OPENAI_API_KEY=your_openai_api_key_here`
+     - Windows: `set GEMINI_API_KEY=your_gemini_api_key_here`
+     - macOS/Linux: `export GEMINI_API_KEY=your_gemini_api_key_here`
 
-5. Run the application:
+6. Run the application:
    ```
    python app.py
    ```
