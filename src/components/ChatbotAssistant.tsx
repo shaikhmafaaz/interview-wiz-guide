@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionError } from "@/components/chat/ConnectionError";
+import { apiService } from "@/services/api";
 
 interface Message {
   id: number;
@@ -32,12 +33,12 @@ export function ChatbotAssistant() {
 
   // Check backend connection on first open
   useEffect(() => {
-    if (isOpen && !isCheckingConnection) {
+    if (isOpen && !backendError) {
       checkBackendConnection();
     }
   }, [isOpen]);
 
-  const checkBackendConnection = async () => {
+  const checkBackendConnection = useCallback(async () => {
     if (isCheckingConnection) return;
     
     setIsCheckingConnection(true);
@@ -81,11 +82,11 @@ export function ChatbotAssistant() {
     } finally {
       setIsCheckingConnection(false);
     }
-  };
+  }, [isCheckingConnection, backendError, toast]);
 
-  const retryConnection = () => {
+  const retryConnection = useCallback(() => {
     checkBackendConnection();
-  };
+  }, [checkBackendConnection]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
