@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, User, XCircle, AlertCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionError } from "@/components/chat/ConnectionError";
@@ -20,6 +21,7 @@ export function ChatbotAssistant() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [backendError, setBackendError] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -31,12 +33,15 @@ export function ChatbotAssistant() {
 
   // Check backend connection on first open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isCheckingConnection) {
       checkBackendConnection();
     }
   }, [isOpen]);
 
   const checkBackendConnection = async () => {
+    if (isCheckingConnection) return;
+    
+    setIsCheckingConnection(true);
     try {
       const response = await fetch('http://localhost:5000/health', {
         method: 'GET',
@@ -49,10 +54,18 @@ export function ChatbotAssistant() {
         setBackendError(false);
       } else {
         setBackendError(true);
+        console.error("Backend health check failed with status:", response.status);
       }
     } catch (error) {
+      console.error("Backend connection error:", error);
       setBackendError(true);
+    } finally {
+      setIsCheckingConnection(false);
     }
+  };
+
+  const retryConnection = () => {
+    checkBackendConnection();
   };
 
   const handleSendMessage = async () => {
@@ -78,6 +91,10 @@ export function ChatbotAssistant() {
         },
         body: JSON.stringify({ message: userMessage.text }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       
       const data = await response.json();
       setBackendError(false);
@@ -199,7 +216,20 @@ export function ChatbotAssistant() {
             </div>
           </ScrollArea>
           
-          {backendError && <ConnectionError />}
+          {backendError && (
+            <div className="px-3">
+              <ConnectionError />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={retryConnection} 
+                className="w-full mb-3"
+                disabled={isCheckingConnection}
+              >
+                {isCheckingConnection ? "Checking..." : "Retry Connection"}
+              </Button>
+            </div>
+          )}
           
           <div className="p-3 border-t">
             <ChatInput 
@@ -207,7 +237,7 @@ export function ChatbotAssistant() {
               setInputMessage={setInputMessage}
               handleSendMessage={handleSendMessage}
               handleKeyPress={handleKeyPress}
-              isLoading={isLoading}
+              isLoading={isLoading || backendError}
             />
           </div>
         </Card>
