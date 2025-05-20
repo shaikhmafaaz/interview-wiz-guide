@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,13 +43,21 @@ export function ChatbotAssistant() {
     setIsCheckingConnection(true);
     try {
       console.log("Checking backend connection...");
+      
+      // Create an AbortController with a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch('http://localhost:5000/health', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 5000, // Add timeout to prevent long waiting
+        signal: controller.signal
       });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         console.log("Backend connection successful");
@@ -102,6 +111,10 @@ export function ChatbotAssistant() {
         }
       }
       
+      // Create an AbortController with a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       // Send message to API
       const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
@@ -109,8 +122,11 @@ export function ChatbotAssistant() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message: userMessage.text }),
-        timeout: 10000, // 10 seconds timeout
+        signal: controller.signal
       });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -148,7 +164,8 @@ export function ChatbotAssistant() {
       if (error instanceof Error && 
           (error.message.includes("Failed to fetch") || 
            error.message.includes("NetworkError") || 
-           error.message.includes("unavailable"))) {
+           error.message.includes("unavailable") ||
+           error.name === "AbortError")) {
         setBackendError(true);
       }
       
