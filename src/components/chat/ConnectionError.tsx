@@ -1,8 +1,14 @@
 
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
-export function ConnectionError() {
+interface ConnectionErrorProps {
+  onRetry: () => void;
+  isChecking: boolean;
+}
+
+export function ConnectionError({ onRetry, isChecking }: ConnectionErrorProps) {
   return (
     <Alert variant="destructive" className="mb-3">
       <AlertCircle className="h-4 w-4" />
@@ -17,6 +23,15 @@ export function ConnectionError() {
         <div className="mt-2 text-xs">
           If you're using a virtual environment, activate it first.
         </div>
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={onRetry} 
+          className="w-full mt-3"
+          disabled={isChecking}
+        >
+          {isChecking ? "Checking..." : "Retry Connection"}
+        </Button>
       </AlertDescription>
     </Alert>
   );

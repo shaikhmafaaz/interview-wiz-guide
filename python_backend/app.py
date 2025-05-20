@@ -15,6 +15,11 @@ init_db()
 # Register all routes
 register_routes(app)
 
+# Add health check route directly in app.py for clarity
+@app.route('/health', methods=['GET'])
+def health():
+    return {"status": "ok", "message": "Server is running"}, 200
+
 if __name__ == '__main__':
     print(f"Starting Flask server on http://{HOST}:{PORT}")
     print(f"Available endpoints:")
@@ -25,4 +30,5 @@ if __name__ == '__main__':
     print(f"  - /api/save-answer")
     print(f"  - /api/get-user-answers/<user_id>")
     print(f"  - /api/generate-questions")
+    print(f"  - /api/chat")
     app.run(debug=DEBUG, host=HOST, port=PORT)

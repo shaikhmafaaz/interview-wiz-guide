@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, XCircle, AlertCircle } from "lucide-react";
+import { Bot, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -43,18 +41,30 @@ export function ChatbotAssistant() {
     
     setIsCheckingConnection(true);
     try {
+      console.log("Checking backend connection...");
       const response = await fetch('http://localhost:5000/health', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        timeout: 5000, // Add timeout to prevent long waiting
       });
       
       if (response.ok) {
+        console.log("Backend connection successful");
         setBackendError(false);
+        
+        // If we previously had an error, show success message
+        if (backendError) {
+          toast({
+            title: "Connection Restored",
+            description: "Successfully connected to the backend server.",
+            variant: "default"
+          });
+        }
       } else {
-        setBackendError(true);
         console.error("Backend health check failed with status:", response.status);
+        setBackendError(true);
       }
     } catch (error) {
       console.error("Backend connection error:", error);
@@ -83,6 +93,15 @@ export function ChatbotAssistant() {
     setIsLoading(true);
     
     try {
+      // Check connection before sending
+      if (backendError) {
+        await checkBackendConnection();
+        // If still error, use fallback
+        if (backendError) {
+          throw new Error("Backend server unavailable");
+        }
+      }
+      
       // Send message to API
       const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
@@ -90,6 +109,7 @@ export function ChatbotAssistant() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message: userMessage.text }),
+        timeout: 10000, // 10 seconds timeout
       });
       
       if (!response.ok) {
@@ -123,7 +143,14 @@ export function ChatbotAssistant() {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error:', error);
-      setBackendError(true);
+      
+      // Check if it's a connection error and set state accordingly
+      if (error instanceof Error && 
+          (error.message.includes("Failed to fetch") || 
+           error.message.includes("NetworkError") || 
+           error.message.includes("unavailable"))) {
+        setBackendError(true);
+      }
       
       // Fallback to static responses if API fails
       const fallbackResponse = getBotResponse(inputMessage);
@@ -218,16 +245,10 @@ export function ChatbotAssistant() {
           
           {backendError && (
             <div className="px-3">
-              <ConnectionError />
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={retryConnection} 
-                className="w-full mb-3"
-                disabled={isCheckingConnection}
-              >
-                {isCheckingConnection ? "Checking..." : "Retry Connection"}
-              </Button>
+              <ConnectionError 
+                onRetry={retryConnection} 
+                isChecking={isCheckingConnection} 
+              />
             </div>
           )}
           
