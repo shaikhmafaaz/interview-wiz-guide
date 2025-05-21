@@ -1,4 +1,3 @@
-
 interface ApiResponse {
   success: boolean;
   message: string;
@@ -18,17 +17,84 @@ interface UserData {
 }
 
 // API URL for local development
-const API_URL = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 export const apiService = {
   // Check if backend is healthy
   async checkHealth(): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${API_URL}/health`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+      
+      const response = await fetch(`${API_URL}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        return { 
+          success: false, 
+          message: `Server returned status: ${response.status}` 
+        };
+      }
+      
       const data = await response.json();
       return { success: true, message: 'Backend is healthy', data };
     } catch (error) {
-      return { success: false, message: 'Failed to connect to backend' };
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Failed to connect to backend' 
+      };
+    }
+  },
+
+  // Send message to chatbot
+  async sendChatMessage(message: string): Promise<ApiResponse> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+      
+      const response = await fetch(`${API_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        return { 
+          success: false, 
+          message: `Server returned status: ${response.status}` 
+        };
+      }
+      
+      const data = await response.json();
+      return { 
+        success: true, 
+        message: data.message,
+        data 
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Failed to send message' 
+      };
     }
   },
 

@@ -33,4 +33,4 @@ if __name__ == '__main__':
     print(f"  - /api/generate-questions")
     print(f"  - /api/chat")
     # Use 0.0.0.0 to ensure the server is accessible externally
-    app.run(debug=DEBUG, host='0.0.0.0', port=PORT)
+    app.run(debug=DEBUG, host=HOST, port=PORT)

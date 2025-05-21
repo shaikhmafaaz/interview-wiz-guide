@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,26 +60,10 @@ export function ChatbotAssistant() {
     try {
       console.log("Checking backend connection...");
       
-      // Create an AbortController with a timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+      // Use apiService for health check
+      const result = await apiService.checkHealth();
       
-      const response = await fetch(HEALTH_ENDPOINT, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        signal: controller.signal,
-        // Added to help with CORS
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      
-      // Clear the timeout
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
+      if (result.success) {
         console.log("Backend connection successful");
         setBackendError(false);
         
@@ -93,7 +76,7 @@ export function ChatbotAssistant() {
           });
         }
       } else {
-        console.error("Backend health check failed with status:", response.status);
+        console.error("Backend health check failed:", result.message);
         setBackendError(true);
       }
     } catch (error) {
@@ -132,11 +115,10 @@ export function ChatbotAssistant() {
         }
       }
       
-      // Create an AbortController with a timeout
+      // Use fetch with timeout for chat endpoint
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
       
-      // Send message to API
       const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -145,12 +127,10 @@ export function ChatbotAssistant() {
         },
         body: JSON.stringify({ message: userMessage.text }),
         signal: controller.signal,
-        // Added to help with CORS
-        mode: 'cors', 
+        mode: 'cors',
         credentials: 'omit'
       });
       
-      // Clear the timeout
       clearTimeout(timeoutId);
       
       if (!response.ok) {
