@@ -16,10 +16,11 @@ interface Message {
   sender: 'user' | 'bot';
 }
 
-const API_BASE_URL = 'http://localhost:5000';
+// API endpoint configuration - can be updated for different environments
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const HEALTH_ENDPOINT = `${API_BASE_URL}/health`;
 const CHAT_ENDPOINT = `${API_BASE_URL}/api/chat`;
-const REQUEST_TIMEOUT = 5000; // 5 seconds
+const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 export function ChatbotAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,10 +37,20 @@ export function ChatbotAssistant() {
     }
   ]);
 
-  // Check backend connection on first open
+  // Check backend connection on first open and periodically
   useEffect(() => {
     if (isOpen) {
       checkBackendConnection();
+      
+      // Set up periodic health checks every 30 seconds when chat is open
+      const intervalId = setInterval(() => {
+        if (isOpen) {
+          checkBackendConnection();
+        }
+      }, 30000);
+      
+      // Clean up interval on unmount
+      return () => clearInterval(intervalId);
     }
   }, [isOpen]);
 
@@ -60,7 +71,10 @@ export function ChatbotAssistant() {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        signal: controller.signal
+        signal: controller.signal,
+        // Added to help with CORS
+        mode: 'cors',
+        credentials: 'omit'
       });
       
       // Clear the timeout
@@ -120,7 +134,7 @@ export function ChatbotAssistant() {
       
       // Create an AbortController with a timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
       
       // Send message to API
       const response = await fetch(CHAT_ENDPOINT, {
@@ -130,7 +144,10 @@ export function ChatbotAssistant() {
           'Accept': 'application/json',
         },
         body: JSON.stringify({ message: userMessage.text }),
-        signal: controller.signal
+        signal: controller.signal,
+        // Added to help with CORS
+        mode: 'cors', 
+        credentials: 'omit'
       });
       
       // Clear the timeout
@@ -178,7 +195,7 @@ export function ChatbotAssistant() {
       }
       
       // Fallback to static responses if API fails
-      const fallbackResponse = getBotResponse(inputMessage);
+      const fallbackResponse = getBotResponse(userMessage.text);
       const botMessage: Message = {
         id: messages.length + 2,
         text: fallbackResponse,
