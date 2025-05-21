@@ -16,6 +16,11 @@ interface Message {
   sender: 'user' | 'bot';
 }
 
+const API_BASE_URL = 'http://localhost:5000';
+const HEALTH_ENDPOINT = `${API_BASE_URL}/health`;
+const CHAT_ENDPOINT = `${API_BASE_URL}/api/chat`;
+const REQUEST_TIMEOUT = 5000; // 5 seconds
+
 export function ChatbotAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
@@ -33,7 +38,7 @@ export function ChatbotAssistant() {
 
   // Check backend connection on first open
   useEffect(() => {
-    if (isOpen && !backendError) {
+    if (isOpen) {
       checkBackendConnection();
     }
   }, [isOpen]);
@@ -47,12 +52,13 @@ export function ChatbotAssistant() {
       
       // Create an AbortController with a timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
       
-      const response = await fetch('http://localhost:5000/health', {
+      const response = await fetch(HEALTH_ENDPOINT, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         signal: controller.signal
       });
@@ -117,10 +123,11 @@ export function ChatbotAssistant() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       
       // Send message to API
-      const response = await fetch('http://localhost:5000/api/chat', {
+      const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ message: userMessage.text }),
         signal: controller.signal

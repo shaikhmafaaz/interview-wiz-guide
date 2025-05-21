@@ -7,7 +7,7 @@ from routes import register_routes
 
 # Create and configure the application
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes and origins
 
 # Initialize the database
 init_db()
@@ -15,7 +15,7 @@ init_db()
 # Register all routes
 register_routes(app)
 
-# Add health check route directly in app.py for clarity
+# Health check directly in app.py for clarity
 @app.route('/health', methods=['GET'])
 def health():
     return {"status": "ok", "message": "Server is running"}, 200

@@ -26,7 +26,7 @@ def register_routes(app):
         return jsonify({
             'status': 'ok',
             'message': 'Server is running'
-        })
+        }), 200
     
     @app.route('/api/generate-questions', methods=['POST'])
     def generate_questions():
@@ -54,15 +54,7 @@ def register_routes(app):
         
         return Response(response_text, mimetype='text/plain')
     
-    @app.route('/api/register', methods=['POST'])
-    def register():
-        # ... keep existing code (user registration logic)
-        return jsonify({'status': 'error', 'message': 'Not implemented yet'})
-    
-    @app.route('/api/login', methods=['POST'])
-    def login():
-        # ... keep existing code (user login logic)
-        return jsonify({'status': 'error', 'message': 'Not implemented yet'})
+    # ... keep existing code (user registration and login routes)
     
     @app.route('/api/save-answer', methods=['POST'])
     def save_answer():
