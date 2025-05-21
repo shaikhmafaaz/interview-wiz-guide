@@ -28,7 +28,7 @@ export function ConnectionError({ onRetry, isChecking }: ConnectionErrorProps) {
             <Separator className="my-2" />
             <div className="text-xs text-red-800 dark:text-red-300 mb-2">
               <p>Make sure Python and Flask are installed. If using a virtual environment, activate it first.</p>
-              <p className="mt-1">Check backend logs for errors. The server should be accessible at <code className="bg-red-200 dark:bg-red-950 px-1 rounded">http://localhost:5000</code></p>
+              <p className="mt-1">Important: Make sure the server is running on <code className="bg-red-200 dark:bg-red-950 px-1 rounded">0.0.0.0:5000</code> (not just localhost).</p>
             </div>
             <div className="flex gap-2">
               <Button 

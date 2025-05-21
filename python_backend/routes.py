@@ -28,6 +28,8 @@ def register_routes(app):
             'message': 'Server is running'
         }), 200
     
+    # ... keep existing code (user registration and login routes)
+    
     @app.route('/api/generate-questions', methods=['POST'])
     def generate_questions():
         data = request.json
@@ -53,8 +55,6 @@ def register_routes(app):
             response_text += f"{i}. {question}\n"
         
         return Response(response_text, mimetype='text/plain')
-    
-    # ... keep existing code (user registration and login routes)
     
     @app.route('/api/save-answer', methods=['POST'])
     def save_answer():

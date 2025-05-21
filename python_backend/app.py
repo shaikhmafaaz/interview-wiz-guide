@@ -7,7 +7,8 @@ from routes import register_routes
 
 # Create and configure the application
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes and origins
+# Enable CORS for all routes and all origins
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Initialize the database
 init_db()
@@ -31,4 +32,5 @@ if __name__ == '__main__':
     print(f"  - /api/get-user-answers/<user_id>")
     print(f"  - /api/generate-questions")
     print(f"  - /api/chat")
-    app.run(debug=DEBUG, host=HOST, port=PORT)
+    # Use 0.0.0.0 to ensure the server is accessible externally
+    app.run(debug=DEBUG, host='0.0.0.0', port=PORT)
