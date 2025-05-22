@@ -1,5 +1,5 @@
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from config import DEBUG, HOST, PORT
 from database import init_db
@@ -19,7 +19,10 @@ register_routes(app)
 # Health check directly in app.py for clarity
 @app.route('/health', methods=['GET'])
 def health():
-    return {"status": "ok", "message": "Server is running"}, 200
+    return jsonify({
+        "status": "ok",
+        "message": "Server is running"
+    }), 200
 
 if __name__ == '__main__':
     print(f"Starting Flask server on http://{HOST}:{PORT}")

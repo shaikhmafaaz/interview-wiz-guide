@@ -44,7 +44,7 @@ export function ChatbotAssistant() {
       // Set up periodic health checks every 30 seconds when chat is open
       const intervalId = setInterval(() => {
         if (isOpen) {
-          checkBackendConnection();
+          checkBackendConnection(false); // Silent check
         }
       }, 30000);
       
@@ -53,7 +53,7 @@ export function ChatbotAssistant() {
     }
   }, [isOpen]);
 
-  const checkBackendConnection = useCallback(async () => {
+  const checkBackendConnection = useCallback(async (showToast = true) => {
     if (isCheckingConnection) return;
     
     setIsCheckingConnection(true);
@@ -65,16 +65,15 @@ export function ChatbotAssistant() {
       
       if (result.success) {
         console.log("Backend connection successful");
-        setBackendError(false);
-        
-        // If we previously had an error, show success message
-        if (backendError) {
+        // Only show toast if we're coming back from an error state
+        if (backendError && showToast) {
           toast({
             title: "Connection Restored",
             description: "Successfully connected to the backend server.",
             variant: "default"
           });
         }
+        setBackendError(false);
       } else {
         console.error("Backend health check failed:", result.message);
         setBackendError(true);
@@ -106,71 +105,33 @@ export function ChatbotAssistant() {
     setIsLoading(true);
     
     try {
-      // Check connection before sending
-      if (backendError) {
-        await checkBackendConnection();
-        // If still error, use fallback
-        if (backendError) {
-          throw new Error("Backend server unavailable");
-        }
-      }
+      // Use apiService to send message
+      const result = await apiService.sendChatMessage(userMessage.text);
       
-      // Use fetch with timeout for chat endpoint
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-      
-      const response = await fetch(CHAT_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ message: userMessage.text }),
-        signal: controller.signal,
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setBackendError(false);
-      
-      // Handle API key not configured response
-      if (data.message && data.message.includes("API key not configured")) {
-        console.log("Gemini API Key needs to be configured:");
-        console.log("1. Create a .env file in the python_backend directory");
-        console.log("2. Add this line: GEMINI_API_KEY=your_gemini_api_key_here");
-        console.log("3. Restart the Flask server");
+      if (result.success) {
+        setBackendError(false);
         
-        toast({
-          title: "API Key Missing",
-          description: "Gemini API key is not configured. Check the console for instructions on how to set it up.",
-          variant: "destructive"
-        });
+        // Add bot response
+        const botMessage: Message = {
+          id: messages.length + 2,
+          text: result.message,
+          sender: 'bot'
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        console.error("Failed to get chat response:", result.message);
+        throw new Error(result.message);
       }
-      
-      // Add bot response
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: data.message,
-        sender: 'bot'
-      };
-      
-      setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error:', error);
       
       // Check if it's a connection error and set state accordingly
-      if (error instanceof Error && 
-          (error.message.includes("Failed to fetch") || 
-           error.message.includes("NetworkError") || 
-           error.message.includes("unavailable") ||
-           error.name === "AbortError")) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("Failed to fetch") || 
+          errorMessage.includes("NetworkError") || 
+          errorMessage.includes("unavailable") ||
+          errorMessage.includes("abort")) {
         setBackendError(true);
       }
       
@@ -235,7 +196,7 @@ export function ChatbotAssistant() {
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {isOpen ? (
-        <Card className="w-80 sm:w-96 h-96 flex flex-col shadow-xl border-2 border-purple-200 animate-scale-in">
+        <Card className="w-80 sm:w-96 h-[450px] flex flex-col shadow-xl border-2 border-purple-200 animate-scale-in">
           <div className="bg-purple-500 text-white p-3 flex justify-between items-center rounded-t-lg">
             <div className="flex items-center space-x-2">
               <Bot className="h-5 w-5" />
